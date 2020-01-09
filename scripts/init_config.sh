@@ -1,0 +1,43 @@
+#!/bin/bash
+
+INITDB_ROOT_NAME=${MONGO_INITDB_ROOT_USERNAME}
+INITDB_ROOT_PASS=${MONGO_INITDB_ROOT_PASSWORD}
+
+CONFIG_SERVER_NAME=$1
+CONFIG_SERVER_PORT=$2
+CONFIGS=${@:3}
+CONFIG_SERVER_CONTAINER=$3 # we connect to the container
+
+MONGO_INITIALIZED_PLACEHOLDER=".mongo_config_srv_initialized_"$CONFIG_SERVER_NAME
+
+if [ -f $MONGO_INITIALIZED_PLACEHOLDER ]; then
+  echo "INFO: $CONFIG_SERVER_NAME ALREADY INITIALIZED"
+  exit 0 # Already initialized
+else
+  echo "INITIALIZATION CONFIG_SERVER: $CONFIG_SERVER_NAME"
+
+  COUNTER=0
+  CONFIG_STR=""
+  for CONFIG in $CONFIGS; do
+    if [ -z "$CONFIG_STR" ]; then #empty string
+      CONFIG_STR="{_id: $COUNTER, host: \"$CONFIG:$CONFIG_SERVER_PORT\"}"
+    else
+      CONFIG_STR="$CONFIG_STR, {_id: $COUNTER, host: \"$CONFIG:$CONFIG_SERVER_PORT\"}"
+    fi
+
+    COUNTER=$((COUNTER + 1))
+  done
+
+  echo "DEBUG: $CONFIG_SERVER_CONTAINER:$CONFIG_SERVER_PORT rs.initiate({_id: \"$CONFIG_SERVER_NAME\", configsvr: true, members: [$CONFIG_STR]})"
+  mongo --host $CONFIG_SERVER_CONTAINER --port $CONFIG_SERVER_PORT -u $INITDB_ROOT_NAME -p $INITDB_ROOT_PASS <<< "rs.initiate({_id: \"$CONFIG_SERVER_NAME\", configsvr: true, members: [$CONFIG_STR]})"
+
+  if [ $? -eq 0 ]; then
+    touch $MONGO_INITIALIZED_PLACEHOLDER
+    echo "SUCCESS CONFIG_SERVER: $CONFIG_SERVER_NAME INITIALIZED"
+    exit 0
+  else
+    echo "ERROR CONFIG_SERVER: $CONFIG_SERVER_NAME NOT INITIALIZED!!!"
+    exit 1
+  fi
+fi
+
