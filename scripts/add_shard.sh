@@ -12,7 +12,7 @@ SHARDS=${@:5}
 MONGO_INITIALIZED_PLACEHOLDER=".mongo_rs_shard_added_"$RS_SHARD_NAME
 
 if [ -f $MONGO_INITIALIZED_PLACEHOLDER ]; then
-  echo "INFO: $RS_SHARD_NAME AREADY ADDED"
+  echo "INFO: $RS_SHARD_NAME ALREADY ADDED"
   exit 0 # Already initialized
 else
   echo "ADD SHARD: $RS_SHARD_NAME"

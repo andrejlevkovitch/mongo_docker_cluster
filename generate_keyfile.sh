@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KEYFILE_DIR="./keyfile"
+KEYFILE_DIR="./resources"
 MONGO_KEYFILE="$KEYFILE_DIR/mongo-keyfile"
 
 MONGO_UID=999
@@ -11,7 +11,9 @@ if [ $EUID -eq 0 ]; then # XXX need superuser rights
     echo "$MONGO_KEYFILE already exists"
     exit 1
   else
-    mkdir $KEYFILE_DIR
+    if [ ! -d $KEYFILE_DIR ]; then
+      mkdir $KEYFILE_DIR
+    fi
     openssl rand -base64 756 > $MONGO_KEYFILE
     chmod 400 $MONGO_KEYFILE
     chown $MONGO_UID:$MONGO_GID $MONGO_KEYFILE
