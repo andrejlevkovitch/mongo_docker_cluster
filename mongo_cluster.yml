@@ -1,4 +1,4 @@
-version: '3.3'
+version: "3.3"
 services:
   # Routers
   router0:
@@ -90,7 +90,7 @@ services:
 
   ## INIT containers
 
-  config-init:
+  config_init:
     image: ${MONGO_IMAGE}
     volumes:
       - "./scripts:/scripts"
@@ -108,7 +108,7 @@ services:
         sleep ${CONFIG_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_config.sh config-svr ${CONFIG_PORT} config0 config1 config2
 
-  rs0-init:
+  rs0_init:
     image: ${MONGO_IMAGE}
     volumes:
       - "./scripts:/scripts"
@@ -126,7 +126,7 @@ services:
         sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
 
-  rs1-init:
+  rs1_init:
     image: ${MONGO_IMAGE}
     volumes:
       - "./scripts:/scripts"
@@ -144,7 +144,7 @@ services:
         sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_rs_shard.sh rs1 ${RS1SHARD_PORT} rs1shard0 rs1shard1 rs1shard2
 
-  router-init:
+  router_init:
     image: ${MONGO_IMAGE}
     volumes:
       - "./scripts:/scripts"
