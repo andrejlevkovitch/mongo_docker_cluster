@@ -1,21 +1,24 @@
 version: "3.3"
 services:
   # Routers
-  router0:
+  router:
     image: ${MONGO_IMAGE}
-    container_name: router0
     volumes:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
+      - "./scripts:/scripts"
     ports:
       - "${MONGO_HOST_PORT}:${ROUTER_PORT}"
     depends_on:
       - cluster_init
-    command: mongos --port ${ROUTER_PORT} --configdb config-svr/config0:${CONFIG_PORT},config1:${CONFIG_PORT},config2:${CONFIG_PORT} --bind_ip_all --keyFile ${MONGO_CONTAINER_KEYFILE}
+    command:
+      - /bin/bash
+      - -c
+      - |
+        /scripts/./start_mongos.sh ${MONGO_CONTAINER_KEYFILE} ${ROUTER_PORT} config-svr ${CLUSTER_PREFIX}_config ${CONFIG_PORT} ${CONFIG_COUNT}
 
   # Config replica set
-  config0:
+  config:
     image: ${MONGO_IMAGE}
-    container_name: config0
     environment: # The user will be using for authenicate to the cluster
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -23,24 +26,9 @@ services:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
     command: mongod --port ${CONFIG_PORT} --configsvr --replSet config-svr --keyFile ${MONGO_CONTAINER_KEYFILE}
 
-  config1:
-    image: ${MONGO_IMAGE}
-    container_name: config1
-    volumes:
-      - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongod --port ${CONFIG_PORT} --configsvr --replSet config-svr --keyFile ${MONGO_CONTAINER_KEYFILE}
-
-  config2:
-    image: ${MONGO_IMAGE}
-    container_name: config2
-    volumes:
-      - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongod --port ${CONFIG_PORT} --configsvr --replSet config-svr --keyFile ${MONGO_CONTAINER_KEYFILE}
-
   # Shards
-  rs0shard0:
+  rs0shard:
     image: ${MONGO_IMAGE}
-    container_name: rs0shard0
     environment: # We need user for connecting to the shard from other host (for initiation of shard replica set)
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -48,40 +36,11 @@ services:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
     command: mongod --port ${RS0SHARD_PORT} --shardsvr --replSet rs0 --keyFile ${MONGO_CONTAINER_KEYFILE}
 
-  rs0shard1:
+  rs1shard:
     image: ${MONGO_IMAGE}
-    container_name: rs0shard1
-    volumes:
-      - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongod --port ${RS0SHARD_PORT} --shardsvr --replSet rs0 --keyFile ${MONGO_CONTAINER_KEYFILE}
-
-  rs0shard2:
-    image: ${MONGO_IMAGE}
-    container_name: rs0shard2
-    volumes:
-      - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongod --port ${RS0SHARD_PORT} --shardsvr --replSet rs0 --keyFile ${MONGO_CONTAINER_KEYFILE}
-
-  rs1shard0:
-    image: ${MONGO_IMAGE}
-    container_name: rs1shard0
     environment: # We need user for connecting to the shard from other host (for initiation of shard replica set)
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    volumes:
-      - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongod --port ${RS1SHARD_PORT} --shardsvr --replSet rs1 --keyFile ${MONGO_CONTAINER_KEYFILE}
-
-  rs1shard1:
-    image: ${MONGO_IMAGE}
-    container_name: rs1shard1
-    volumes:
-      - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongod --port ${RS1SHARD_PORT} --shardsvr --replSet rs1 --keyFile ${MONGO_CONTAINER_KEYFILE}
-
-  rs1shard2:
-    image: ${MONGO_IMAGE}
-    container_name: rs1shard2
     volumes:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
     command: mongod --port ${RS1SHARD_PORT} --shardsvr --replSet rs1 --keyFile ${MONGO_CONTAINER_KEYFILE}
@@ -96,24 +55,16 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     depends_on:
-      - config0
-      - config1
-      - config2
-      - rs0shard0
-      - rs0shard1
-      - rs0shard2
-      - rs1shard0
-      - rs1shard1
-      - rs1shard2
+      - config
+      - rs0shard
     command:
       - /bin/bash
       - -c
       - |
-        sleep ${CONFIG_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
-        /scripts/./init_config.sh config-svr ${CONFIG_PORT} config0 config1 config2
-        sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
-        /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
-        /scripts/./init_rs_shard.sh rs1 ${RS1SHARD_PORT} rs1shard0 rs1shard1 rs1shard2
+        sleep ${CLUSTER_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
+        /scripts/./init_config.sh config-svr ${CONFIG_PORT} ${CLUSTER_PREFIX}_config ${CONFIG_COUNT}
+        /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} ${CLUSTER_PREFIX}_rs0shard ${RS0SHARD_COUNT}
+        /scripts/./init_rs_shard.sh rs1 ${RS1SHARD_PORT} ${CLUSTER_PREFIX}_rs1shard ${RS1SHARD_COUNT}
 
   router_init:
     image: ${MONGO_IMAGE}
@@ -123,12 +74,13 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     depends_on:
-      - router0
+      - router
+      - cluster_init
     command:
       - /bin/bash
       - -c
       - |
         sleep ${ROUTER_WAITING_TIME} # XXX need sleeping time, because it will fail if replica set not initialized or not have primary node
-        /scripts/./add_shard.sh router0 ${ROUTER_PORT} rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
-        /scripts/./add_shard.sh router0 ${ROUTER_PORT} rs1 ${RS1SHARD_PORT} rs1shard0 rs1shard1 rs1shard2
+        /scripts/./add_shard.sh ${CLUSTER_PREFIX}_router_1 ${ROUTER_PORT} rs0 ${RS0SHARD_PORT} ${CLUSTER_PREFIX}_rs0shard ${RS0SHARD_COUNT}
+        /scripts/./add_shard.sh ${CLUSTER_PREFIX}_router_1 ${ROUTER_PORT} rs1 ${RS1SHARD_PORT} ${CLUSTER_PREFIX}_rs1shard ${RS1SHARD_COUNT}
 

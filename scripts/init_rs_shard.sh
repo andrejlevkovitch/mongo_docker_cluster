@@ -5,8 +5,8 @@ INITDB_ROOT_PASS=${MONGO_INITDB_ROOT_PASSWORD}
 
 RS_SHARD_NAME=$1
 RS_SHARD_PORT=$2
-SHARDS=${@:3}
-RS_SHARD_CONTAINER=$3 # we connect to the container
+SHARD_NAME=$3
+RS_SHARD_COUNT=$4
 
 MONGO_INITIALIZED_PLACEHOLDER=".mongo_rs_shard_initialized_"$RS_SHARD_NAME
 
@@ -16,17 +16,21 @@ if [ -f $MONGO_INITIALIZED_PLACEHOLDER ]; then
 else
   echo "INITIALIZATION RS_SHARD: $RS_SHARD_NAME"
 
-  COUNTER=0
-  SHARDS_STR=""
-  for SHARD in $SHARDS; do
-    if [ -z "$SHARDS_STR" ]; then # empty string
-      SHARDS_STR="{_id: $COUNTER, host: \"$SHARD:$RS_SHARD_PORT\"}"
-    else
-      SHARDS_STR="$SHARDS_STR, {_id: $COUNTER, host: \"$SHARD:$RS_SHARD_PORT\"}"
-    fi
+  echo "DEBUG: RS_SHARD_NAME  = $RS_SHARD_NAME"
+  echo "DEBUG: RS_SHARD_PORT  = $RS_SHARD_PORT"
+  echo "DEBUG: SHARD_NAME     = $SHARD_NAME"
+  echo "DEBUG: RS_SHARD_COUNT = $RS_SHARD_COUNT"
 
-    COUNTER=$((COUNTER + 1))
+  SHARDS_STR=""
+  for i in $(seq 1 $RS_SHARD_COUNT); do
+    if [ $i -eq 1 ]; then # empty string
+      SHARDS_STR="{_id: $i, host: \"${SHARD_NAME}_$i:$RS_SHARD_PORT\"}"
+    else
+      SHARDS_STR="$SHARDS_STR, {_id: $i, host: \"${SHARD_NAME}_$i:$RS_SHARD_PORT\"}"
+    fi
   done
+
+  RS_SHARD_CONTAINER="$SHARD_NAME""_1" # we connect to the container
 
   echo "DEBUG: $RS_SHARD_CONTAINER:$RS_SHARD_PORT rs.initiate({_id: \"$RS_SHARD_NAME\", members: [$SHARDS_STR]})"
   mongo --host $RS_SHARD_CONTAINER --port $RS_SHARD_PORT -u $INITDB_ROOT_NAME -p $INITDB_ROOT_PASS <<< "rs.initiate({_id: \"$RS_SHARD_NAME\", members: [$SHARDS_STR]})"
