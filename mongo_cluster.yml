@@ -6,13 +6,13 @@ services:
     container_name: router0
     volumes:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
-    command: mongos --port ${ROUTER_PORT} --configdb config-svr/config0:${CONFIG_PORT},config1:${CONFIG_PORT},config2:${CONFIG_PORT} --bind_ip_all --keyFile ${MONGO_CONTAINER_KEYFILE}
     ports:
       - "${MONGO_HOST_PORT}:${ROUTER_PORT}"
     depends_on:
       - config-init
       - rs0-init
       - rs1-init
+    command: mongos --port ${ROUTER_PORT} --configdb config-svr/config0:${CONFIG_PORT},config1:${CONFIG_PORT},config2:${CONFIG_PORT} --bind_ip_all --keyFile ${MONGO_CONTAINER_KEYFILE}
 
   # Config replica set
   config0:
@@ -97,16 +97,16 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    depends_on:
+      - config0
+      - config1
+      - config2
     command:
       - /bin/bash
       - -c
       - |
         sleep ${CONFIG_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_config.sh config-svr ${CONFIG_PORT} config0 config1 config2
-    depends_on:
-      - config0
-      - config1
-      - config2
 
   rs0-init:
     image: ${MONGO_IMAGE}
@@ -115,16 +115,16 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    depends_on:
+      - rs0shard0
+      - rs0shard1
+      - rs0shard2
     command:
       - /bin/bash
       - -c
       - |
         sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
-    depends_on:
-      - rs0shard0
-      - rs0shard1
-      - rs0shard2
 
   rs1-init:
     image: ${MONGO_IMAGE}
@@ -133,16 +133,16 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    depends_on:
+      - rs1shard0
+      - rs1shard1
+      - rs1shard2
     command:
       - /bin/bash
       - -c
       - |
         sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_rs_shard.sh rs1 ${RS1SHARD_PORT} rs1shard0 rs1shard1 rs1shard2
-    depends_on:
-      - rs1shard0
-      - rs1shard1
-      - rs1shard2
 
   router-init:
     image: ${MONGO_IMAGE}
@@ -151,6 +151,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    depends_on:
+      - router0
     command:
       - /bin/bash
       - -c
@@ -158,6 +160,4 @@ services:
         sleep ${ROUTER_WAITING_TIME} # XXX need sleeping time, because it will fail if replica set not initialized or not have primary node
         /scripts/./add_shard.sh router0 ${ROUTER_PORT} rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
         /scripts/./add_shard.sh router0 ${ROUTER_PORT} rs1 ${RS1SHARD_PORT} rs1shard0 rs1shard1 rs1shard2
-    depends_on:
-      - router0
 
