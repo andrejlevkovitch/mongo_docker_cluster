@@ -7,7 +7,8 @@ ROUTER_CONTAINER=$1 # we connect to the container
 ROUTER_PORT=$2
 RS_SHARD_NAME=$3
 RS_SHARD_PORT=$4
-SHARDS=${@:5}
+SHARD_NAME=$5
+RS_SHARD_COUNT=$6
 
 MONGO_INITIALIZED_PLACEHOLDER=".mongo_rs_shard_added_"$RS_SHARD_NAME
 
@@ -17,12 +18,19 @@ if [ -f $MONGO_INITIALIZED_PLACEHOLDER ]; then
 else
   echo "ADD SHARD: $RS_SHARD_NAME"
 
+  echo "DEBUG: ROUTER_CONTAINER = $ROUTER_CONTAINER"
+  echo "DEBUG: ROUTER_PORT      = $ROUTER_PORT"
+  echo "DEBUG: RS_SHARD_NAME    = $RS_SHARD_NAME"
+  echo "DEBUG: RS_SHARD_PORT    = $RS_SHARD_PORT"
+  echo "DEBUG: SHARD_NAME       = $SHARD_NAME"
+  echo "DEBUG: RS_SHARD_COUNT   = $RS_SHARD_COUNT"
+
   SHARD_STR=""
-  for SHARD in $SHARDS; do
-    if [ -z "$SHARDS_STR" ]; then #empty string
-      SHARD_STR="$SHARD:$RS_SHARD_PORT"
+  for i in $(seq 1 $RS_SHARD_COUNT); do
+    if [ $i -eq 1 ]; then #empty string
+      SHARD_STR="${SHARD_NAME}_$i:$RS_SHARD_PORT"
     else
-      SHARD_STR="$SHARDS_STR,$SHARD:$RS_SHARD_PORT"
+      SHARD_STR="$SHARD_STR,${SHARD_NAME}_$i:$RS_SHARD_PORT"
     fi
   done
 
