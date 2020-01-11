@@ -61,9 +61,8 @@ services:
       - /bin/bash
       - -c
       - |
-        sleep ${CONFIG_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
+        sleep ${CLUSTER_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_config.sh config-svr ${CONFIG_PORT} ${CLUSTER_PREFIX}_config ${CONFIG_COUNT}
-        sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
         /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} ${CLUSTER_PREFIX}_rs0shard ${RS0SHARD_COUNT}
         /scripts/./init_rs_shard.sh rs1 ${RS1SHARD_PORT} ${CLUSTER_PREFIX}_rs1shard ${RS1SHARD_COUNT}
 
