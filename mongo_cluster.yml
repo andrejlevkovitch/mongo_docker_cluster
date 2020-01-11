@@ -9,9 +9,7 @@ services:
     ports:
       - "${MONGO_HOST_PORT}:${ROUTER_PORT}"
     depends_on:
-      - config-init
-      - rs0-init
-      - rs1-init
+      - cluster_init
     command: mongos --port ${ROUTER_PORT} --configdb config-svr/config0:${CONFIG_PORT},config1:${CONFIG_PORT},config2:${CONFIG_PORT} --bind_ip_all --keyFile ${MONGO_CONTAINER_KEYFILE}
 
   # Config replica set
@@ -90,7 +88,7 @@ services:
 
   ## INIT containers
 
-  config_init:
+  cluster_init:
     image: ${MONGO_IMAGE}
     volumes:
       - "./scripts:/scripts"
@@ -101,39 +99,9 @@ services:
       - config0
       - config1
       - config2
-    command:
-      - /bin/bash
-      - -c
-      - |
-        sleep ${CONFIG_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
-        /scripts/./init_config.sh config-svr ${CONFIG_PORT} config0 config1 config2
-
-  rs0_init:
-    image: ${MONGO_IMAGE}
-    volumes:
-      - "./scripts:/scripts"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    depends_on:
       - rs0shard0
       - rs0shard1
       - rs0shard2
-    command:
-      - /bin/bash
-      - -c
-      - |
-        sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
-        /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
-
-  rs1_init:
-    image: ${MONGO_IMAGE}
-    volumes:
-      - "./scripts:/scripts"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    depends_on:
       - rs1shard0
       - rs1shard1
       - rs1shard2
@@ -141,7 +109,10 @@ services:
       - /bin/bash
       - -c
       - |
+        sleep ${CONFIG_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
+        /scripts/./init_config.sh config-svr ${CONFIG_PORT} config0 config1 config2
         sleep ${RS_SHARD_WAITING_TIME} # XXX need sleep because we have to connect for every shard in replica set
+        /scripts/./init_rs_shard.sh rs0 ${RS0SHARD_PORT} rs0shard0 rs0shard1 rs0shard2
         /scripts/./init_rs_shard.sh rs1 ${RS1SHARD_PORT} rs1shard0 rs1shard1 rs1shard2
 
   router_init:
