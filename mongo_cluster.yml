@@ -1,6 +1,7 @@
 version: "3.3"
 services:
-  # Routers
+
+  # Routers -------------------------------------------------------------------
   router_1:
     image: ${MONGO_IMAGE}
     container_name: router_1 # you can not replicate routers, because you need set host port for every router
@@ -17,7 +18,8 @@ services:
       - |
         /scripts/./start_mongos.sh ${MONGO_CONTAINER_KEYFILE} ${ROUTER_PORT} config-svr ${CLUSTER_PREFIX}_config ${CONFIG_PORT} ${CONFIG_COUNT}
 
-  # Config replica set
+
+  # Config Replica Set --------------------------------------------------------
   config:
     image: ${MONGO_IMAGE}
     environment: # The user will be using for authenicate to the cluster
@@ -27,7 +29,8 @@ services:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
     command: mongod --port ${CONFIG_PORT} --configsvr --replSet config-svr --keyFile ${MONGO_CONTAINER_KEYFILE}
 
-  # Shards
+
+  # Shards --------------------------------------------------------------------
   rs0shard:
     image: ${MONGO_IMAGE}
     environment: # We need user for connecting to the shard from other host (for initiation of shard replica set)
@@ -46,8 +49,8 @@ services:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
     command: mongod --port ${RS1SHARD_PORT} --shardsvr --replSet rs1 --keyFile ${MONGO_CONTAINER_KEYFILE}
 
-  ## INIT containers
 
+  ## INIT containers ----------------------------------------------------------
   cluster_init:
     image: ${MONGO_IMAGE}
     volumes:
