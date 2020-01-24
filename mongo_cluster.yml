@@ -1,4 +1,4 @@
-version: "3.3"
+version: "2.4"
 services:
 
   # Routers -------------------------------------------------------------------
@@ -12,6 +12,8 @@ services:
       - "${MONGO_HOST_PORT}:${ROUTER_PORT}"
     depends_on:
       - cluster_init
+    mem_limit: ${ROUTER_MEM_LIMIT}
+    cpus: ${ROUTER_CPUS}
     command:
       - /bin/bash
       - -c
@@ -27,6 +29,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
+    mem_limit: ${CONFIG_MEM_LIMIT}
+    cpus: ${CONFIG_CPUS}
     command: mongod --port ${CONFIG_PORT} --configsvr --replSet config-svr --keyFile ${MONGO_CONTAINER_KEYFILE}
 
 
@@ -38,6 +42,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
+    mem_limit: ${SHARD_MEM_LIMIT}
+    cpus: ${SHARD_CPUS}
     command: mongod --port ${RS0SHARD_PORT} --shardsvr --replSet rs0 --keyFile ${MONGO_CONTAINER_KEYFILE}
 
   rs1shard:
@@ -47,6 +53,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - "${MONGO_HOST_KEYFILE}:${MONGO_CONTAINER_KEYFILE}"
+    mem_limit: ${SHARD_MEM_LIMIT}
+    cpus: ${SHARD_CPUS}
     command: mongod --port ${RS1SHARD_PORT} --shardsvr --replSet rs1 --keyFile ${MONGO_CONTAINER_KEYFILE}
 
 
