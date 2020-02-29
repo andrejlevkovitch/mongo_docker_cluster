@@ -16,7 +16,7 @@ Also you can manually add some parts of cluster in [mongo_cluster.yml](mongo_clu
 For create new sharded replica set you must:
 
   1. Append in [environment.env](environment.env) new `RS*SHARD_COUNT` with count
-  of new shards in replica set ( __NOTE__ number can not be less than [3](https://docs.mongodb.com/manual/core/sharded-cluster-components/#production-configuration))
+  of new shards in replica set ( __NOTE__ number [can not be less than 3](https://docs.mongodb.com/manual/core/sharded-cluster-components/#production-configuration))
 
   2. In [mongo_cluster.yml](mongo_cluster.yml) append new `rs*shard` (see others)
 
