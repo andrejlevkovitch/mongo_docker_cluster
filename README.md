@@ -1,6 +1,6 @@
 # mongo docker cluster
 
-##Usage
+## Usage
 
   1. Generate mongo keyfile by script [generate_keyfile.sh](generate_keyfile.sh) (need superuser rights)
 
@@ -30,7 +30,7 @@ For create new sharded replica set you must:
 ... --scale rs*shard=$RS*SHARD_COUNT
 ```
 
-##Note
+## Note
 
   - `MONGO_HOST_PORT` must be free on host
 
@@ -45,7 +45,7 @@ For create new sharded replica set you must:
   - if you changed something in [mongo_cluster.yml](mongo_cluster.yml) or
     [environment.env](environment.env), then you need recreate all cluster
 
-##Problems
+## Problems
 
   - you can not use specific `volumes` for shards, because it is impassible to
     set different volumes in config file before scaling
