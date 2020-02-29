@@ -69,6 +69,7 @@ services:
     depends_on:
       - config
       - rs0shard
+      - rs1shard
     command:
       - /bin/bash
       - -c
